@@ -6,8 +6,6 @@ from contextlib import contextmanager, nullcontext
 from datetime import datetime, timedelta
 from typing import List, Optional, Union
 
-from socketio import Client
-from socketio.exceptions import ConnectionError as SocketIOConnectionError
 from sqlalchemy import bindparam, create_engine, func, insert, select, update
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
@@ -28,9 +26,13 @@ class Database:
         self.engine = create_engine(uri)
         self.session_factory = scoped_session(sessionmaker(bind=self.engine))
         self.ratios_manager: Optional[RatiosManager] = None
-        self.socketio_client = Client()
+        self.socketio_client = None
 
     def socketio_connect(self):
+        from socketio.exceptions import ConnectionError as SocketIOConnectionError
+        if self.socketio_client is None:
+            from socketio import Client
+            self.socketio_client = Client()
         if self.socketio_client.connected and self.socketio_client.namespaces:
             return True
         try:
